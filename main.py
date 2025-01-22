@@ -1,10 +1,11 @@
 import json
 import os
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget, 
-                             QLabel, QVBoxLayout, QHBoxLayout, QFrame)
+                             QLabel, QVBoxLayout, QHBoxLayout, QFrame, QMessageBox)
 from PySide6.QtCore import Qt, QRect, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QColor, QIcon
 import sys
+import requests
 
 class SubjectButton(QPushButton):
     def __init__(self, subject_data, parent=None):
@@ -59,6 +60,7 @@ class SidePanelApp(QMainWindow):
         self.panel_height = 600
         self.y_position = 100
         self.is_expanded = False
+        self.json_path = os.path.join(os.path.dirname(__file__), 'schedule.json')
 
         # 設置主視窗，初始只顯示按鈕大小
         screen = QApplication.primaryScreen().geometry()
@@ -106,6 +108,9 @@ class SidePanelApp(QMainWindow):
         
         # 讀取課表數據
         self.schedule_data = self.load_schedule()
+        if not self.schedule_data:
+            QMessageBox.warning(self, "錯誤", "無法加載課表數據，使用默認數據")
+            self.schedule_data = self.get_default_schedule()
         
         # 創建時間段和課程
         for time_slot, subjects in self.schedule_data.items():
@@ -215,20 +220,109 @@ class SidePanelApp(QMainWindow):
         )
 
     def load_schedule(self):
-        """加載課表數據"""
+        """從服務器加載課表數據並保存到本地"""
         try:
-            json_path = os.path.join(os.path.dirname(__file__), 'schedule.json')
-            with open(json_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+            # 嘗試從服務器獲取數據
+            response = requests.get('http://your-server-url/api/schedule')
+            if response.status_code == 200:
+                schedule_data = response.json()
+                # 保存到本地 JSON 文件
+                self.save_schedule_to_json(schedule_data)
+                return schedule_data
+            else:
+                print(f"服務器錯誤: {response.status_code}")
+                # 嘗試從本地 JSON 讀取
+                return self.load_schedule_from_json()
         except Exception as e:
-            print(f"Error loading schedule: {e}")
-            # 返回默認課表數據
-            return {
-                "上午": [
-                    {"name": "語文", "icon": "📚", "color": "#E74C3C", "time": "08:00-09:00"}
-                    # ... 其他默認數據
-                ]
-            }
+            print(f"網絡請求錯誤: {e}")
+            return self.load_schedule_from_json()
+
+    def save_schedule_to_json(self, data):
+        """保存課表數據到 JSON 文件"""
+        try:
+            with open(self.json_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            print("課表數據已保存到本地")
+        except Exception as e:
+            print(f"保存 JSON 文件錯誤: {e}")
+
+    def load_schedule_from_json(self):
+        """從本地 JSON 文件加載課表"""
+        try:
+            if os.path.exists(self.json_path):
+                with open(self.json_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception as e:
+            print(f"讀取 JSON 文件錯誤: {e}")
+        return self.get_default_schedule()
+
+    def get_default_schedule(self):
+        """返回默認課表數據"""
+        return {
+            "上午": [
+                {
+                    "name": "未知課程",
+                    "icon": "❓",
+                    "color": "#95A5A6",
+                    "time": "00:00-00:00"
+                }
+            ]
+        }
+
+    def refresh_schedule(self):
+        """刷新課表數據"""
+        new_data = self.load_schedule()
+        if new_data:
+            self.schedule_data = new_data
+            self.update_ui_with_schedule()
+            return True
+        return False
+
+    def update_ui_with_schedule(self):
+        """更新界面顯示的課表"""
+        # 清除現有課表
+        for i in reversed(range(self.panel.layout().count()-1)):  # 保留標題
+            widget = self.panel.layout().itemAt(i).widget()
+            if widget:
+                widget.deleteLater()
+
+        # 重新創建課表UI
+        for time_slot, subjects in self.schedule_data.items():
+            time_frame = TimeSlotFrame(time_slot, self.panel)
+            time_frame.setStyleSheet("""
+                QFrame {
+                    background-color: #2C3E50;
+                    border-radius: 15px;
+                    margin: 5px 10px;
+                    padding: 8px;
+                    border: 1px solid #3498DB;
+                }
+            """)
+
+            for subject in subjects:
+                btn = SubjectButton(subject, time_frame)
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                            stop:0 {subject['color']}, stop:1 {subject['color']}DD);
+                        color: white;
+                        border: none;
+                        border-radius: 12px;
+                        padding: 8px;
+                        text-align: left;
+                        margin: 3px 5px;
+                        font-size: 14px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {subject['color']};
+                        border: 2px solid white;
+                    }}
+                """)
+                time_frame.layout().addWidget(btn)
+            
+            self.panel.layout().addWidget(time_frame)
+        
+        self.panel.layout().addStretch()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
