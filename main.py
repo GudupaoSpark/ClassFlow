@@ -218,10 +218,10 @@ class SidePanelApp(QMainWindow):
                 self.save_schedule_to_json(schedule_data)
                 return schedule_data
             else:
-                print(f"服務器錯誤: {response.status_code}")
+                print(f"服务器错误: {response.status_code}")
                 return self.load_schedule_from_json()
         except Exception as e:
-            print(f"網路請求錯誤: {e}")
+            print(f"网络请求错误: {e}")
             return self.load_schedule_from_json()
 
     def save_schedule_to_json(self, data):
