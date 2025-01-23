@@ -83,6 +83,7 @@ class SidePanelApp(QMainWindow):
         self.y_position = 100
         self.is_expanded = False
         self.json_path = os.path.join(os.path.dirname(__file__), 'schedule.json')
+        self.server_config_path = os.path.join(os.path.dirname(__file__), 'server_config.json')
         self._init_ui()
         self._load_data()
         
@@ -199,18 +200,28 @@ class SidePanelApp(QMainWindow):
             self.button_height
         )
 
+    def load_server_config(self):
+        try:
+            with open(self.server_config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return config.get('server_ip', 'localhost')
+        except Exception as e:
+            print(f"讀取伺服器設定檔錯誤: {e}")
+            return 'localhost'
+
     def load_schedule(self):
         try:
-            response = requests.get('http://{server_ip}/api/schedule')
+            server_ip = self.load_server_config()
+            response = requests.get(f'http://{server_ip}/api/schedule')
             if response.status_code == 200:
                 schedule_data = response.json()
                 self.save_schedule_to_json(schedule_data)
                 return schedule_data
             else:
-                print(f"服务器错误: {response.status_code}")
+                print(f"服務器錯誤: {response.status_code}")
                 return self.load_schedule_from_json()
         except Exception as e:
-            print(f"网络请求错误: {e}")
+            print(f"網路請求錯誤: {e}")
             return self.load_schedule_from_json()
 
     def save_schedule_to_json(self, data):
