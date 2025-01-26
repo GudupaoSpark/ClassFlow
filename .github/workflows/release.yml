@@ -15,6 +15,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: 生成 GitHub App 临时令牌
+      id: auth
+      uses: actions/create-github-app-token@v1
+      with:
+        app-id: ${{ secrets.BOT_APP_ID }}
+        private-key: ${{ secrets.BOT_APP_SECRET }}
+        owner: ${{ github.repository_owner }}
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -45,4 +53,6 @@ jobs:
         asset_path: .\dist\release.zip
         asset_name: release.zip
         asset_content_type: application/zip
+      env:
+        GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
         
