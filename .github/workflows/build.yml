@@ -1,0 +1,38 @@
+name: Build and Package
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller -w main.py
+        
+    - name: Copy data files
+      run: |
+        xcopy .\data .\dist\main\data /E /I
+        
+    - name: Package artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-output
+        path: dist/main
