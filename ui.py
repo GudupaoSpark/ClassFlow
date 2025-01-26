@@ -89,7 +89,6 @@ class SidePanelApp(QMainWindow):
         self._init_ui()
         self.update_ui_with_schedule()
 
-
     def _init_ui(self):
         screen = QApplication.primaryScreen().geometry()
         self.setGeometry(
@@ -101,6 +100,7 @@ class SidePanelApp(QMainWindow):
         self.setWindowFlags(
             Qt.FramelessWindowHint |
             Qt.WindowStaysOnTopHint |
+            Qt.Tool |
             Qt.MSWindowsFixedSizeDialogHint
         )
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -168,7 +168,6 @@ class SidePanelApp(QMainWindow):
         self.toggle_button.clicked.connect(self.toggle_panel)
         self.update_button_position()
 
-
     def toggle_panel(self):
         screen = QApplication.primaryScreen().geometry()
         if self.is_expanded:
@@ -205,7 +204,6 @@ class SidePanelApp(QMainWindow):
             self.button_height
         )
 
-
     def refresh_schedule(self):
         new_data = self.link.load_schedule()
         if (new_data):
@@ -230,7 +228,7 @@ class SidePanelApp(QMainWindow):
                     border-radius: 15px;
                     margin: 2px 5px;
                     padding: 5px;
-                    border: 1px solid #F0F0F0;
+                    border: 1px solid #aaaaaa;
                 }
             """)
 
@@ -251,3 +249,6 @@ class SidePanelApp(QMainWindow):
             return "下午"
         else:
             return "晚自习"
+
+    def closeEvent(self, event):
+        event.ignore()
