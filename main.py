@@ -12,7 +12,8 @@ class SubjectButton(QPushButton):
     def __init__(self, subject_data, parent=None):
         super().__init__(subject_data['name'], parent)
         self.setFixedHeight(50)
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.ArrowCursor)
+        self.setEnabled(False)
         self._init_style()
 
     def _init_style(self):
@@ -29,8 +30,9 @@ class SubjectButton(QPushButton):
                 font-weight: bold;
                 letter-spacing: 2px;
             }
-            QPushButton:hover {
-                background-color: #F4D03F;
+            QPushButton:disabled {
+                background-color: #F1C40F;
+                color: white;
             }
         """)
 
@@ -96,17 +98,24 @@ class SidePanelApp(QMainWindow):
             self.button_height
         )
         self.setWindowFlags(
-            Qt.FramelessWindowHint | 
-            Qt.WindowStaysOnTopHint | 
+            Qt.FramelessWindowHint |
+            Qt.WindowStaysOnTopHint |
             Qt.MSWindowsFixedSizeDialogHint
         )
+        self.setAttribute(Qt.WA_TranslucentBackground)
         
         self.setFixedSize(self.button_width, self.button_height)
 
         self.setStyleSheet("""
             QMainWindow {
                 background-color: white;
-                border-radius: 20px;
+                border-radius: 25px;
+                border: 2px solid #3498DB;
+                padding: 1px;
+            }
+            
+            QMainWindow::separator {
+                background: transparent;
             }
         """)
 
@@ -135,13 +144,13 @@ class SidePanelApp(QMainWindow):
         self.panel.setStyleSheet("""
             QWidget#mainPanel {
                 background-color: white;
-                border-radius: 12px;
+                border-radius: 5px;
                 border: 1px solid #E0E0E0;
             }
         """)
         self.panel.hide()
 
-        self.toggle_button = QPushButton(">>", self)
+        self.toggle_button = QPushButton("<<", self)
         self.toggle_button.setStyleSheet("""
             QPushButton {
                 background-color: #3498DB;
@@ -171,13 +180,13 @@ class SidePanelApp(QMainWindow):
             new_width = self.button_width
             new_height = self.button_height
             self.setFixedSize(new_width, new_height)
-            self.toggle_button.setText(">>")
+            self.toggle_button.setText("<<")
         else:
             new_x = screen.width() - self.panel_width_expanded
             new_width = self.panel_width_expanded
             new_height = self.panel_height
             self.setFixedSize(new_width, new_height)
-            self.toggle_button.setText("<<")
+            self.toggle_button.setText(">>")
             self.panel.show()
 
         self.anim = QPropertyAnimation(self, b"geometry")
@@ -271,7 +280,7 @@ class SidePanelApp(QMainWindow):
             time_frame.setStyleSheet("""
                 QFrame {
                     background-color: white;
-                    border-radius: 8px;
+                    border-radius: 15px;
                     margin: 2px 5px;
                     padding: 5px;
                     border: 1px solid #F0F0F0;
